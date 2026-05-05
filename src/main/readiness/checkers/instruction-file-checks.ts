@@ -3,17 +3,18 @@ import type { ReadinessCheck } from '../../../shared/types';
 import { fileExists, readFileSafe } from '../utils';
 
 export interface InstructionFileOpts {
-  fileName: string;      // e.g. 'CLAUDE.md' or 'AGENTS.md'
+  fileName: string;           // e.g. 'CLAUDE.md' or 'AGENTS.md'
   fallbackDirectory?: string; // e.g. '.claude'
-  idPrefix: string;      // e.g. 'claude-md' or 'agents-md'
-  displayName: string;   // e.g. 'CLAUDE.md' or 'AGENTS.md'
+  idPrefix: string;           // e.g. 'claude-md' or 'agents-md'
+  displayName: string;        // e.g. 'CLAUDE.md' or 'AGENTS.md'
 }
 
 export function resolveInstructionFilePath(projectPath: string, opts: InstructionFileOpts): string | null {
-  const candidates = [
-    path.join(projectPath, opts.fileName),
-    opts.fallbackDirectory ? path.join(projectPath, opts.fallbackDirectory, opts.fileName) : null,
-  ].filter((candidate): candidate is string => Boolean(candidate));
+  const candidates = [path.join(projectPath, opts.fileName)];
+
+  if (opts.fallbackDirectory) {
+    candidates.push(path.join(projectPath, opts.fallbackDirectory, opts.fileName));
+  }
 
   for (const candidate of candidates) {
     if (fileExists(candidate)) {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import { codexContextProducer } from './codex-context';
+import { mockInstructionFiles } from '../test-utils';
 import type { AnalysisContext } from '../types';
 
 vi.mock('fs');
@@ -11,19 +12,6 @@ const ctx: AnalysisContext = { trackedFiles: [] };
 beforeEach(() => {
   vi.resetAllMocks();
 });
-
-function mockInstructionFile(fileName: string, content: string): void {
-  mockFs.statSync.mockImplementation((p: fs.PathLike) => {
-    if (String(p).endsWith(fileName)) {
-      return { isFile: () => true, isDirectory: () => false } as fs.Stats;
-    }
-    throw new Error('ENOENT');
-  });
-  mockFs.readFileSync.mockImplementation((p: fs.PathOrFileDescriptor) => {
-    if (String(p).endsWith(fileName)) return content;
-    throw new Error('ENOENT');
-  });
-}
 
 describe('codexContextProducer', () => {
   it('returns tagged check with context category', () => {
@@ -47,14 +35,14 @@ describe('codexContextProducer', () => {
   });
 
   it('passes for AGENTS.md under 300 lines', () => {
-    mockInstructionFile('AGENTS.md', Array(200).fill('line').join('\n'));
+    mockInstructionFiles(mockFs, { 'AGENTS.md': Array(200).fill('line').join('\n') });
 
     const tagged = codexContextProducer.produce('/test/project', ctx);
     expect(tagged[0].check.status).toBe('pass');
   });
 
   it('warns for AGENTS.md between 300-500 lines', () => {
-    mockInstructionFile('AGENTS.md', Array(400).fill('line').join('\n'));
+    mockInstructionFiles(mockFs, { 'AGENTS.md': Array(400).fill('line').join('\n') });
 
     const tagged = codexContextProducer.produce('/test/project', ctx);
     expect(tagged[0].check.status).toBe('warning');
@@ -62,7 +50,7 @@ describe('codexContextProducer', () => {
   });
 
   it('fails for AGENTS.md over 500 lines', () => {
-    mockInstructionFile('AGENTS.md', Array(600).fill('line').join('\n'));
+    mockInstructionFiles(mockFs, { 'AGENTS.md': Array(600).fill('line').join('\n') });
 
     const tagged = codexContextProducer.produce('/test/project', ctx);
     expect(tagged[0].check.status).toBe('fail');
